@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assessment | CSE A Classroom</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-9">
+                <div id="quiz-loading" class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2 text-muted">Preparing your assessment...</p>
+                </div>
+
+                <div id="quiz-content" class="d-none">
+                    <div class="item-card mb-4 border-0 shadow-sm" style="border-left: 4px solid var(--primary) !important;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="fw-bold mb-1" id="quiz-title-display">Quiz Title</h2>
+                                <p class="text-muted mb-0" id="quiz-topic-display">Topic</p>
+                            </div>
+                            <div class="text-end">
+                                <div class="badge badge-indigo mb-2 fs-6 px-3 py-2">
+                                    <i class="fas fa-clock me-2"></i><span id="timer">10:00</span>
+                                </div>
+                                <p class="small text-muted mb-0">Time Remaining</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="quizForm">
+                        <div id="questions-list"></div>
+                        <div class="text-end mt-4">
+                            <button type="submit" class="btn btn-indigo px-5 py-2">Submit Assessment</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Result View -->
+                <div id="result-view" class="d-none text-center animate-in">
+                    <div class="item-card p-5">
+                        <div class="mb-4">
+                            <i class="fas fa-check-circle text-success fa-4x"></i>
+                        </div>
+                        <h1 class="fw-bold mb-2">Quiz Completed!</h1>
+                        <p class="text-muted mb-5">Your responses have been recorded and graded instantly.</p>
+                        
+                        <div class="row g-4 mb-5">
+                            <div class="col-6 col-md-3">
+                                <div class="p-4 bg-light rounded-lg">
+                                    <h2 class="fw-bold mb-0" id="res-score">0/0</h2>
+                                    <p class="text-muted small mb-0">FINAL SCORE</p>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="p-4 bg-light rounded-lg">
+                                    <h2 class="fw-bold mb-0 text-success" id="res-correct">0</h2>
+                                    <p class="text-muted small mb-0">CORRECT</p>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="p-4 bg-light rounded-lg">
+                                    <h2 class="fw-bold mb-0 text-danger" id="res-wrong">0</h2>
+                                    <p class="text-muted small mb-0">WRONG</p>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="p-4 bg-light rounded-lg">
+                                    <h2 class="fw-bold mb-0 text-primary" id="res-percent">0%</h2>
+                                    <p class="text-muted small mb-0">PERCENTAGE</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <a href="student.html" class="btn btn-indigo px-5">Back to Dashboard</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const quizId = urlParams.get('id');
+        let quizData = null;
+        let timeLeft = 600; // 10 minutes
+
+        async function init() {
+            if(!quizId) { window.location.href = 'student.html'; return; }
+            try {
+                const res = await fetch(`/quiz/${quizId}`);
+                quizData = await res.json();
+                renderQuiz();
+                startTimer();
+            } catch (err) { alert("Failed to load quiz"); }
+        }
+
+        function renderQuiz() {
+            document.getElementById('quiz-loading').classList.add('d-none');
+            document.getElementById('quiz-content').classList.remove('d-none');
+            document.getElementById('quiz-title-display').innerText = quizData.title;
+            document.getElementById('quiz-topic-display').innerText = quizData.topic;
+            
+            const list = document.getElementById('questions-list');
+            list.innerHTML = quizData.questions.map((q, idx) => `
+                <div class="item-card mb-3 animate-in" style="animation-delay: ${idx * 0.05}s">
+                    <p class="fw-bold mb-3">Q${idx + 1}. ${q.text}</p>
+                    <div class="d-flex flex-column gap-2">
+                        <label class="d-flex align-items-center p-2 rounded bg-light cursor-pointer">
+                            <input type="radio" name="q-${q.id}" value="${q.option1}" class="me-2" required> ${q.option1}
+                        </label>
+                        <label class="d-flex align-items-center p-2 rounded bg-light cursor-pointer">
+                            <input type="radio" name="q-${q.id}" value="${q.option2}" class="me-2"> ${q.option2}
+                        </label>
+                        <label class="d-flex align-items-center p-2 rounded bg-light cursor-pointer">
+                            <input type="radio" name="q-${q.id}" value="${q.option3}" class="me-2"> ${q.option3}
+                        </label>
+                        <label class="d-flex align-items-center p-2 rounded bg-light cursor-pointer">
+                            <input type="radio" name="q-${q.id}" value="${q.option4}" class="me-2"> ${q.option4}
+                        </label>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function startTimer() {
+            const timerEl = document.getElementById('timer');
+            const interval = setInterval(() => {
+                timeLeft--;
+                const mins = Math.floor(timeLeft / 60);
+                const secs = timeLeft % 60;
+                timerEl.innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    autoSubmit();
+                }
+            }, 1000);
+        }
+
+        async function handleSubmission(answers) {
+            try {
+                const res = await fetch(`/student/quiz/submit?quizId=${quizId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(answers)
+                });
+                const sub = await res.json();
+                showResults(sub);
+            } catch (err) { alert(err); }
+        }
+
+        function showResults(sub) {
+            document.getElementById('quiz-content').classList.add('d-none');
+            document.getElementById('result-view').classList.remove('d-none');
+            document.getElementById('res-score').innerText = `${sub.score}/${sub.totalQuestions}`;
+            document.getElementById('res-correct').innerText = sub.correctAnswers;
+            document.getElementById('res-wrong').innerText = sub.wrongAnswers;
+            document.getElementById('res-percent').innerText = Math.round((sub.score/sub.totalQuestions)*100) + '%';
+        }
+
+        document.getElementById('quizForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const answers = {};
+            quizData.questions.forEach(q => {
+                answers[q.id] = formData.get(`q-${q.id}`);
+            });
+            handleSubmission(answers);
+        });
+
+        async function autoSubmit() {
+            const formData = new FormData(document.getElementById('quizForm'));
+            const answers = {};
+            quizData.questions.forEach(q => {
+                answers[q.id] = formData.get(`q-${q.id}`);
+            });
+            handleSubmission(answers);
+        }
+
+        init();
+    </script>
+    <style>
+        .cursor-pointer { cursor: pointer; }
+        label:hover { background: #E2E8F0 !important; }
+    </style>
+</body>
+</html>
