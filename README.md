@@ -26,6 +26,23 @@ We used industry-standard frameworks to ensure the application is fast, secure, 
 
 ---
 
+## 🏗️ Core Computer Science Concepts
+
+### 🧩 Object-Oriented Programming (OOP)
+The entire system is built on solid OOP principles to ensure the code is clean and reusable:
+- **Encapsulation:** We use **Classes** (like `User`, `Quiz`, `ChatMessage`) with private data fields. We use **Lombok** to manage these fields securely.
+- **Abstraction:** The `Service` layer (e.g., `QuizService`) hides the complex logic of calculating scores and XP from the user interface.
+- **Polymorphism:** We use **Interfaces** (like `JpaRepository`) which allow the system to interact with the database in a flexible, plug-and-play manner.
+- **Modularity:** Each feature (Chat, Quizzes, Auth) is isolated into its own package, making the app easy to maintain and expand.
+
+### 🧵 Multi-threading & Concurrency
+To ensure a smooth user experience, the app handles multiple tasks at once:
+- **Server-Side Concurrency:** **Spring Boot** uses a multi-threaded embedded **Tomcat server**. This allows multiple students to take quizzes and chat simultaneously without the server slowing down.
+- **Frontend Asynchrony:** The **Discussion Hub** uses asynchronous JavaScript (`fetch` and `setInterval`) to poll for new messages in the background without freezing the webpage.
+- **Desktop UI Threads:** The **Swing-based Teacher Dashboard** runs on the **Event Dispatch Thread (EDT)**, ensuring the interface remains responsive while background data is being fetched.
+
+---
+
 ## 🌟 Key Features
 
 ### 👨‍🏫 For Teachers (The Architect)
