@@ -28,29 +28,41 @@ public class QuizService {
 
     @Transactional
     public Quiz createQuiz(QuizDTO quizDTO, User teacher, Classroom classroom) {
-        Quiz quiz = Quiz.builder()
-                .title(quizDTO.getTitle())
-                .topic(quizDTO.getTopic())
-                .description(quizDTO.getDescription())
-                .difficulty(quizDTO.getDifficulty())
-                .timeLimit(quizDTO.getTimeLimit())
-                .status(quizDTO.getStatus() != null ? quizDTO.getStatus() : "DRAFT")
-                .password(quizDTO.getPassword())
-                .teacher(teacher)
-                .classroom(classroom)
-                .build();
+        try {
+            // 1. Create the Quiz entity first
+            Quiz quiz = Quiz.builder()
+                    .title(quizDTO.getTitle())
+                    .topic(quizDTO.getTopic())
+                    .description(quizDTO.getDescription())
+                    .difficulty(quizDTO.getDifficulty())
+                    .timeLimit(quizDTO.getTimeLimit())
+                    .status(quizDTO.getStatus() != null ? quizDTO.getStatus() : "DRAFT")
+                    .password(quizDTO.getPassword())
+                    .teacher(teacher)
+                    .classroom(classroom)
+                    .build();
 
-        List<Question> questions = quizDTO.getQuestions().stream().map(qDto -> 
-            Question.builder()
-                    .text(qDto.getText())
-                    .options(qDto.getOptions())
-                    .correctAnswer(qDto.getCorrectAnswer())
-                    .quiz(quiz)
-                    .build()
-        ).collect(Collectors.toList());
+            // 2. Save the quiz first to get an ID
+            final Quiz savedQuiz = quizRepository.save(quiz);
 
-        quiz.setQuestions(questions);
-        return quizRepository.save(quiz);
+            // 3. Map questions to the saved quiz
+            List<Question> questions = quizDTO.getQuestions().stream().map(qDto -> 
+                Question.builder()
+                        .text(qDto.getText())
+                        .options(qDto.getOptions())
+                        .correctAnswer(qDto.getCorrectAnswer())
+                        .quiz(savedQuiz) // Use the saved quiz reference
+                        .build()
+            ).collect(Collectors.toList());
+
+            // 4. Update the quiz with questions and save again
+            savedQuiz.setQuestions(questions);
+            return quizRepository.save(savedQuiz);
+        } catch (Exception e) {
+            System.err.println("Error in createQuiz: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     public List<Quiz> getClassroomQuizzes(Classroom classroom) {
