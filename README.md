@@ -96,4 +96,4 @@ To ensure a smooth user experience, the app handles multiple tasks at once:
 
 ---
 
-*Made with ❤️ for CSE-A Classroom by Rahul and Team.*
+*Made with ❤️ for CSE-A Classroom by CSE A Students.*
