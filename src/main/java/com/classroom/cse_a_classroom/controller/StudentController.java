@@ -53,9 +53,9 @@ public class StudentController {
         return ResponseEntity.ok(quizService.getQuizById(id));
     }
 
-    @PostMapping("/quiz/validate")
-    public ResponseEntity<?> validateQuizPassword(@RequestParam Long quizId, @RequestParam String password) {
-        boolean isValid = quizService.validatePassword(quizId, password);
+    @PostMapping("/quiz/{id}/validate")
+    public ResponseEntity<?> validateQuizPassword(@PathVariable Long id, @RequestParam String password) {
+        boolean isValid = quizService.validatePassword(id, password);
         if (isValid) {
             return ResponseEntity.ok().build();
         } else {
