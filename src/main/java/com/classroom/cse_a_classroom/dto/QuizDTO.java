@@ -7,7 +7,10 @@ import java.util.List;
 public class QuizDTO {
     private String title;
     private String topic;
+    private String description;
     private String difficulty;
+    private Integer timeLimit;
+    private String status;
     private String password;
     private List<QuestionDTO> questions;
 }

@@ -28,11 +28,11 @@ public class Resource {
     @Column(nullable = false)
     private String fileUrl;
 
-    @ManyToOne
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "teacher_id", nullable = false)
     private User teacher;
 
-    @ManyToOne
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "classroom_id", nullable = false)
     private Classroom classroom;
 }

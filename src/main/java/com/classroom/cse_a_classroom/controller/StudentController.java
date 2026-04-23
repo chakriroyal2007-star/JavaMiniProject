@@ -45,7 +45,12 @@ public class StudentController {
     @GetMapping("/quizzes")
     public ResponseEntity<?> getQuizzes(@RequestParam Long classroomId) {
         Classroom classroom = classroomService.getClassroomById(classroomId);
-        return ResponseEntity.ok(quizService.getClassroomQuizzes(classroom));
+        return ResponseEntity.ok(quizService.getPublishedQuizzes(classroom));
+    }
+
+    @GetMapping("/quiz/{id}")
+    public ResponseEntity<?> getQuiz(@PathVariable Long id) {
+        return ResponseEntity.ok(quizService.getQuizById(id));
     }
 
     @PostMapping("/quiz/validate")
@@ -59,9 +64,12 @@ public class StudentController {
     }
 
     @PostMapping("/quiz/submit")
-    public ResponseEntity<?> submitQuiz(@RequestParam Long quizId, @RequestBody Map<Long, String> answers, Authentication auth) {
+    public ResponseEntity<?> submitQuiz(@RequestParam Long quizId, 
+                                     @RequestParam(required = false) Integer timeTaken,
+                                     @RequestBody Map<Long, String> answers, 
+                                     Authentication auth) {
         try {
-            return ResponseEntity.ok(quizService.submitQuiz(quizId, getAuthenticatedUser(auth), answers));
+            return ResponseEntity.ok(quizService.submitQuiz(quizId, getAuthenticatedUser(auth), answers, timeTaken));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

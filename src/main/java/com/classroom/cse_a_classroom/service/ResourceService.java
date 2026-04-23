@@ -14,6 +14,9 @@ public class ResourceService {
     @Autowired
     private ResourceRepository resourceRepository;
 
+    @Autowired
+    private FileStorageService fileStorageService;
+
     public Resource createResource(String title, String topic, String description, String fileType, String fileUrl, User teacher, com.classroom.cse_a_classroom.model.Classroom classroom) {
         Resource resource = Resource.builder()
                 .title(title)
@@ -36,6 +39,17 @@ public class ResourceService {
     }
 
     public void deleteResource(Long id) {
-        resourceRepository.deleteById(id);
+        Resource r = resourceRepository.findById(id).orElse(null);
+        if (r != null) {
+            // Physically delete the file FIRST
+            String url = r.getFileUrl();
+            if (url != null && url.startsWith("/uploads/")) {
+                String fileName = url.substring("/uploads/".length());
+                fileStorageService.deleteFile(fileName);
+            }
+            // Direct delete from DB - safe due to PERSIST/MERGE cascades
+            resourceRepository.delete(r);
+            resourceRepository.flush(); 
+        }
     }
 }

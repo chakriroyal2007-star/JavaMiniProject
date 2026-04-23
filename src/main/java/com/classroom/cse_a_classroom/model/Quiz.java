@@ -20,7 +20,10 @@ public class Quiz {
     private String title;
 
     private String topic;
+    private String description;
     private String difficulty;
+    private Integer timeLimit;
+    private String status; // DRAFT, PUBLISHED
 
     @Column(nullable = false)
     private String password;

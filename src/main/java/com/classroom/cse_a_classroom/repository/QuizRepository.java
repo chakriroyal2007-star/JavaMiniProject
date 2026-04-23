@@ -10,4 +10,5 @@ import java.util.List;
 public interface QuizRepository extends JpaRepository<Quiz, Long> {
     List<Quiz> findByTeacher(User teacher);
     List<Quiz> findByClassroom(Classroom classroom);
+    List<Quiz> findByClassroomAndStatus(Classroom classroom, String status);
 }

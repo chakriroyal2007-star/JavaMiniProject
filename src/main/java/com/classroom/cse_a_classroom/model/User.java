@@ -28,4 +28,12 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    @Builder.Default
+    private int xp = 0;
+
+    @Builder.Default
+    private int level = 1;
+
+    private String title; // e.g., "Novice", "Scholar", "Quiz Master"
 }

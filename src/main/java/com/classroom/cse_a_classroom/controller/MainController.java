@@ -29,6 +29,9 @@ public class MainController {
             response.put("name", user.getName());
             response.put("email", user.getEmail());
             response.put("role", user.getRole());
+            response.put("xp", user.getXp());
+            response.put("level", user.getLevel());
+            response.put("title", user.getTitle() != null ? user.getTitle() : "Novice");
         }
         return response;
     }

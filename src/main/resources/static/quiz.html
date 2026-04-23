@@ -3,14 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assessment | CSE A Classroom</title>
+    <title>Quiz Session | CSE A Classroom</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body class="bg-light">
-    <div class="container py-5">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-indigo shadow-sm mb-4">
+        <div class="container">
+            <span class="navbar-brand fw-bold"><i class="fas fa-graduation-cap me-2"></i>Assessment Portal</span>
+            <div class="d-flex align-items-center">
+                <span class="text-white-50 me-3" id="student-name">Loading...</span>
+                <button class="btn btn-sm btn-outline-light" onclick="window.location.href='student.html'">Exit</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container pb-5">
         <div class="row justify-content-center">
             <div class="col-md-9">
                 <div id="quiz-loading" class="text-center py-5">
@@ -26,10 +36,10 @@
                                 <p class="text-muted mb-0" id="quiz-topic-display">Topic</p>
                             </div>
                             <div class="text-end">
-                                <div class="badge badge-indigo mb-2 fs-6 px-3 py-2">
-                                    <i class="fas fa-clock me-2"></i><span id="timer">10:00</span>
+                                <div class="badge bg-danger p-3 rounded-pill shadow-sm" style="min-width: 120px;">
+                                    <i class="fas fa-clock me-2"></i><span id="timer" class="fs-4 fw-bold">00:00</span>
                                 </div>
-                                <p class="small text-muted mb-0">Time Remaining</p>
+                                <p class="text-muted small mt-1 mb-0 fw-bold">REMAINING TIME</p>
                             </div>
                         </div>
                     </div>
@@ -72,34 +82,37 @@
                             </div>
                             <div class="col-6 col-md-3">
                                 <div class="p-4 bg-light rounded-lg">
-                                    <h2 class="fw-bold mb-0 text-primary" id="res-percent">0%</h2>
+                                    <h2 class="fw-bold mb-0 text-indigo" id="res-percent">0%</h2>
                                     <p class="text-muted small mb-0">PERCENTAGE</p>
                                 </div>
                             </div>
                         </div>
 
-                        <a href="student.html" class="btn btn-indigo px-5">Back to Dashboard</a>
+                        <button onclick="window.location.href='student.html'" class="btn btn-indigo px-5">Back to Dashboard</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="js/api.js"></script>
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const quizId = urlParams.get('id');
         let quizData = null;
-        let timeLeft = 600; // 10 minutes
+        let timeLeft = 0;
 
         async function init() {
             if(!quizId) { window.location.href = 'student.html'; return; }
             try {
-                const res = await fetch(`/quiz/${quizId}`);
+                const res = await fetch(`/student/quiz/${quizId}`);
                 quizData = await res.json();
                 renderQuiz();
                 startTimer();
             } catch (err) { alert("Failed to load quiz"); }
+
+            const userRes = await fetch('/api/user/me');
+            const userData = await userRes.json();
+            if(userData) document.getElementById('student-name').innerText = userData.name;
         }
 
         function renderQuiz() {
@@ -107,30 +120,30 @@
             document.getElementById('quiz-content').classList.remove('d-none');
             document.getElementById('quiz-title-display').innerText = quizData.title;
             document.getElementById('quiz-topic-display').innerText = quizData.topic;
+            timeLeft = (quizData.timeLimit || 10) * 60;
+            totalTime = timeLeft;
             
             const list = document.getElementById('questions-list');
             list.innerHTML = quizData.questions.map((q, idx) => `
-                <div class="item-card mb-3 animate-in" style="animation-delay: ${idx * 0.05}s">
-                    <p class="fw-bold mb-3">Q${idx + 1}. ${q.text}</p>
+                <div class="item-card mb-4 animate-in" style="animation-delay: ${idx * 0.05}s" id="q-card-${q.id}">
+                    <p class="fw-bold mb-3 fs-5">Q${idx + 1}. ${q.text}</p>
                     <div class="d-flex flex-column gap-2">
-                        <label class="d-flex align-items-center p-2 rounded bg-light cursor-pointer">
-                            <input type="radio" name="q-${q.id}" value="${q.option1}" class="me-2" required> ${q.option1}
-                        </label>
-                        <label class="d-flex align-items-center p-2 rounded bg-light cursor-pointer">
-                            <input type="radio" name="q-${q.id}" value="${q.option2}" class="me-2"> ${q.option2}
-                        </label>
-                        <label class="d-flex align-items-center p-2 rounded bg-light cursor-pointer">
-                            <input type="radio" name="q-${q.id}" value="${q.option3}" class="me-2"> ${q.option3}
-                        </label>
-                        <label class="d-flex align-items-center p-2 rounded bg-light cursor-pointer">
-                            <input type="radio" name="q-${q.id}" value="${q.option4}" class="me-2"> ${q.option4}
-                        </label>
+                        ${q.options.map(opt => `
+                            <label class="d-flex align-items-center p-3 rounded bg-light border cursor-pointer option-label">
+                                <input type="radio" name="q-${q.id}" value="${opt}" class="me-3" style="width:20px; height:20px;" required> 
+                                <span class="opt-text">${opt}</span>
+                            </label>
+                        `).join('')}
                     </div>
                 </div>
             `).join('');
         }
 
+        let totalTime = 600;
+        let timerStarted = false;
         function startTimer() {
+            if(timerStarted) return;
+            timerStarted = true;
             const timerEl = document.getElementById('timer');
             const interval = setInterval(() => {
                 timeLeft--;
@@ -138,32 +151,78 @@
                 const secs = timeLeft % 60;
                 timerEl.innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
                 
+                if (timeLeft <= 30) {
+                    timerEl.parentElement.classList.replace('bg-danger', 'bg-warning');
+                }
+                if (timeLeft <= 10) {
+                    timerEl.parentElement.classList.replace('bg-warning', 'bg-danger');
+                    timerEl.parentElement.classList.add('animate-pulse');
+                }
+
                 if (timeLeft <= 0) {
                     clearInterval(interval);
+                    timerEl.innerText = "0:00";
+                    alert("Time is up! Your quiz will be submitted automatically.");
                     autoSubmit();
                 }
             }, 1000);
         }
 
         async function handleSubmission(answers) {
+            const timeTaken = totalTime - timeLeft;
             try {
-                const res = await fetch(`/student/quiz/submit?quizId=${quizId}`, {
+                const res = await fetch(`/student/quiz/submit?quizId=${quizId}&timeTaken=${timeTaken}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(answers)
                 });
+                if(!res.ok) throw await res.text();
                 const sub = await res.json();
-                showResults(sub);
+                
+                // --- Creative Feature: Confetti ---
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+                // ----------------------------------
+
+                showResults(sub, answers);
             } catch (err) { alert(err); }
         }
 
-        function showResults(sub) {
+        function showResults(sub, studentAnswers) {
             document.getElementById('quiz-content').classList.add('d-none');
             document.getElementById('result-view').classList.remove('d-none');
             document.getElementById('res-score').innerText = `${sub.score}/${sub.totalQuestions}`;
             document.getElementById('res-correct').innerText = sub.correctAnswers;
             document.getElementById('res-wrong').innerText = sub.wrongAnswers;
-            document.getElementById('res-percent').innerText = Math.round((sub.score/sub.totalQuestions)*100) + '%';
+            document.getElementById('res-percent').innerText = Math.round(sub.percentage) + '%';
+
+            // Review Mode
+            const reviewContainer = document.createElement('div');
+            reviewContainer.className = "mt-5 text-start";
+            reviewContainer.innerHTML = `<h3 class="fw-bold mb-4">Review Your Answers</h3>`;
+            
+            quizData.questions.forEach((q, idx) => {
+                const sAns = studentAnswers[q.id];
+                const isCorrect = sAns === q.correctAnswer;
+                
+                reviewContainer.innerHTML += `
+                    <div class="item-card mb-3 border-${isCorrect ? 'success' : 'danger'} border-start border-4">
+                        <div class="d-flex justify-content-between">
+                            <p class="fw-bold mb-2">Q${idx + 1}. ${q.text}</p>
+                            <span class="badge ${isCorrect ? 'bg-success' : 'bg-danger'}">${isCorrect ? 'Correct' : 'Incorrect'}</span>
+                        </div>
+                        <div class="small">
+                            <div class="${isCorrect ? 'text-success' : 'text-danger'}">Your Answer: ${sAns || 'No Answer'}</div>
+                            ${!isCorrect ? `<div class="text-success fw-bold">Correct Answer: ${q.correctAnswer}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.querySelector('#result-view .item-card').appendChild(reviewContainer);
         }
 
         document.getElementById('quizForm').addEventListener('submit', async (e) => {
@@ -190,6 +249,12 @@
     <style>
         .cursor-pointer { cursor: pointer; }
         label:hover { background: #E2E8F0 !important; }
+        .animate-pulse { animation: pulse 1s infinite; }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
     </style>
 </body>
 </html>

@@ -27,6 +27,11 @@ public class Submission {
     private int totalQuestions;
     private int correctAnswers;
     private int wrongAnswers;
+    private double percentage;
+    private int timeTaken; // in seconds
+
+    @Column(columnDefinition = "TEXT")
+    private String studentAnswers; // JSON string mapping question ID to student answer
     
     private LocalDateTime submittedAt;
 
