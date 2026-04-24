@@ -313,6 +313,8 @@
             const messages = await res.json();
             
             const container = document.getElementById('chat-messages-container');
+            const wasAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+            
             const meRes = await fetch('/api/user/me');
             const me = await meRes.json();
 
@@ -335,7 +337,7 @@
                 `;
             }).join('') || '<div class="text-center text-muted mt-5">No messages yet. Start the conversation!</div>';
             
-            container.scrollTop = container.scrollHeight;
+            if(wasAtBottom) container.scrollTop = container.scrollHeight;
         }
 
         // Emoji Picker Logic
@@ -349,13 +351,15 @@
                 container.style.zIndex = '1000';
                 document.body.appendChild(container);
                 
-                picker = picmo.createPicker({ rootElement: container });
+                picker = picmo.createPicker({ 
+                    rootElement: container,
+                    theme: 'light'
+                });
                 picker.addEventListener('emoji:select', event => {
                     document.getElementById('chat-input').value += event.emoji;
-                    container.style.display = 'none';
                 });
             }
-            picker.rootElement.style.display = picker.rootElement.style.display === 'none' ? 'block' : 'none';
+            container.classList.toggle('d-none');
         });
 
         // File Selection Feedback
