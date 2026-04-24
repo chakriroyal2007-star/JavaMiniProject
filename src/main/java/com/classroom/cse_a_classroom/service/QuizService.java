@@ -3,7 +3,9 @@ package com.classroom.cse_a_classroom.service;
 import com.classroom.cse_a_classroom.dto.QuizDTO;
 import com.classroom.cse_a_classroom.model.*;
 import com.classroom.cse_a_classroom.repository.QuizRepository;
+import com.classroom.cse_a_classroom.repository.QuestionRepository;
 import com.classroom.cse_a_classroom.repository.SubmissionRepository;
+import com.classroom.cse_a_classroom.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -11,7 +13,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
-
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -21,15 +22,18 @@ public class QuizService {
     private QuizRepository quizRepository;
 
     @Autowired
+    private QuestionRepository questionRepository;
+
+    @Autowired
     private SubmissionRepository submissionRepository;
 
     @Autowired
-    private com.classroom.cse_a_classroom.repository.UserRepository userRepository;
+    private UserRepository userRepository;
 
     @Transactional
     public Quiz createQuiz(QuizDTO quizDTO, User teacher, Classroom classroom) {
         try {
-            // 1. Create the Quiz entity first
+            // 1. Create and save the Quiz skeleton
             Quiz quiz = Quiz.builder()
                     .title(quizDTO.getTitle())
                     .topic(quizDTO.getTopic())
@@ -42,26 +46,25 @@ public class QuizService {
                     .classroom(classroom)
                     .build();
 
-            // 2. Save the quiz first to get an ID
-            final Quiz savedQuiz = quizRepository.save(quiz);
+            Quiz savedQuiz = quizRepository.save(quiz);
 
-            // 3. Map questions to the saved quiz
-            List<Question> questions = quizDTO.getQuestions().stream().map(qDto -> 
-                Question.builder()
-                        .text(qDto.getText())
-                        .options(qDto.getOptions())
-                        .correctAnswer(qDto.getCorrectAnswer())
-                        .quiz(savedQuiz) // Use the saved quiz reference
-                        .build()
-            ).collect(Collectors.toList());
+            // 2. Save each question explicitly
+            if (quizDTO.getQuestions() != null) {
+                for (var qDto : quizDTO.getQuestions()) {
+                    Question question = Question.builder()
+                            .text(qDto.getText())
+                            .options(qDto.getOptions())
+                            .correctAnswer(qDto.getCorrectAnswer())
+                            .quiz(savedQuiz)
+                            .build();
+                    questionRepository.save(question);
+                }
+            }
 
-            // 4. Update the quiz with questions and save again
-            savedQuiz.setQuestions(questions);
-            return quizRepository.save(savedQuiz);
+            return quizRepository.findById(savedQuiz.getId()).orElse(savedQuiz);
         } catch (Exception e) {
             System.err.println("Error in createQuiz: " + e.getMessage());
-            e.printStackTrace();
-            throw e;
+            throw new RuntimeException("Failed to create quiz: " + e.getMessage());
         }
     }
 
@@ -94,6 +97,7 @@ public class QuizService {
         return quiz.getPassword().equals(password);
     }
 
+    @Transactional
     public Submission submitQuiz(Long quizId, User student, Map<Long, String> answers, Integer timeTaken) {
         Quiz quiz = getQuizById(quizId);
         if (submissionRepository.existsByStudentAndQuiz(student, quiz)) {
