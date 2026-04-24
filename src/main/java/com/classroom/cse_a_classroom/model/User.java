@@ -30,9 +30,11 @@ public class User {
     private Role role;
 
     @Builder.Default
+    @Column(columnDefinition = "integer default 0", nullable = false)
     private int xp = 0;
 
     @Builder.Default
+    @Column(columnDefinition = "integer default 1", nullable = false)
     private int level = 1;
 
     private String title; // e.g., "Novice", "Scholar", "Quiz Master"
