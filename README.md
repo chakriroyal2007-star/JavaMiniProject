@@ -93,6 +93,25 @@ To ensure a smooth user experience, the app handles multiple tasks at once:
 
 ---
 
+## 🛠️ Troubleshooting
+
+### "Port 8080 already in use"
+If the project fails to start because port 8080 is busy, use these commands to clear it:
+
+**For Windows (PowerShell/CMD):**
+```bash
+# Find the process ID and kill it (one-liner)
+for /f "tokens=5" %a in ('netstat -aon ^| findstr :8080') do taskkill /f /pid %a
+```
+
+**For Mac / Linux (Terminal):**
+```bash
+# Kill the process running on port 8080
+lsof -ti:8080 | xargs kill -9
+```
+
+---
+
 ## 🎓 Presentation & Viva Help
 If you are presenting this project for a college viva, we have prepared a complete guide for you!
 👉 **[View the Presentation & Viva Guide](PRESENTATION_GUIDE.md)**
