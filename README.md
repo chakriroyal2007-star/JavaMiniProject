@@ -76,23 +76,26 @@ To ensure a smooth user experience, the app handles multiple tasks at once:
 
 ## 🚀 Getting Started
 
-### Prerequisites
-- Java 21 installed.
-- A modern web browser.
+### 💻 Running in IntelliJ IDEA (Recommended)
+1. **Open Project:** Open IntelliJ IDEA, select **Open**, and choose the project folder.
+2. **Import Gradle:** IntelliJ will detect the `build.gradle` file. Click **"Import Gradle Project"**.
+3. **Configure JDK:** Go to `File > Project Structure > Project`. Ensure the SDK is set to **Java 25**.
+4. **Run Application:**
+   - Locate `src/main/java/com/classroom/cse_a_classroom/CseAClassroomApplication.java`.
+   - Right-click the file and select **Run 'CseAClassroomApplication'**.
+5. **Access:** Open `http://localhost:8080` in your browser.
 
-### Running Locally
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/chakriroyal2007-star/JavaMiniProject.git
-   ```
-2. Run the application using Gradle:
-   ```bash
-   ./gradlew bootRun
-   ```
-3. Open your browser and navigate to:
-   ```
-   http://localhost:8080
-   ```
+### 📥 Download & Run (Quick Start)
+1. **Download:** Click the **Code** button on GitHub and select **Download ZIP**.
+2. **Extract:** Unzip the folder on your computer.
+3. **Run (Windows):** Open CMD in the folder and type: `gradlew bootRun`
+4. **Run (Mac/Linux):** Open Terminal in the folder and type: `./gradlew bootRun`
+
+---
+
+## 🎓 Presentation & Viva Help
+If you are presenting this project for a college viva, we have prepared a complete guide for you!
+👉 **[View the Presentation & Viva Guide](PRESENTATION_GUIDE.md)**
 
 ---
 
