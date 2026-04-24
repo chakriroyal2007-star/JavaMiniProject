@@ -8,6 +8,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <!-- Emoji Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/picmo@latest/dist/umd/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@picmo/renderer-fontawesome@latest/dist/umd/index.js"></script>
 </head>
 <body>
     <div class="sidebar">
@@ -335,6 +338,34 @@
             container.scrollTop = container.scrollHeight;
         }
 
+        // Emoji Picker Logic
+        let picker = null;
+        document.getElementById('emoji-btn').addEventListener('click', () => {
+            if(!picker) {
+                const container = document.createElement('div');
+                container.style.position = 'absolute';
+                container.style.bottom = '80px';
+                container.style.right = '20px';
+                container.style.zIndex = '1000';
+                document.body.appendChild(container);
+                
+                picker = picmo.createPicker({ rootElement: container });
+                picker.addEventListener('emoji:select', event => {
+                    document.getElementById('chat-input').value += event.emoji;
+                    container.style.display = 'none';
+                });
+            }
+            picker.rootElement.style.display = picker.rootElement.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // File Selection Feedback
+        document.getElementById('chat-file').addEventListener('change', (e) => {
+            if(e.target.files.length > 0) {
+                document.getElementById('chat-input').placeholder = `File: ${e.target.files[0].name} (Ready to send)`;
+                document.getElementById('chat-input').classList.add('border-primary');
+            }
+        });
+
         document.getElementById('chat-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             if(!activeChat) return;
@@ -352,8 +383,13 @@
 
             const url = activeChat.type === 'group' ? `/api/chat/group/${activeChat.id}` : `/api/chat/personal/${activeChat.id}`;
             
+            // Reset UI
             input.value = '';
+            input.placeholder = "Type a message...";
+            input.classList.remove('border-primary');
             fileInput.value = '';
+            
+            if(picker) picker.rootElement.style.display = 'none';
             
             await fetch(url, {
                 method: 'POST',
