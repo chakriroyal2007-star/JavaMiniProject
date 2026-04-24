@@ -22,6 +22,7 @@
             <a href="#" class="sidebar-link active" onclick="loadMyClassrooms()"><i class="fas fa-home"></i> My Classes</a>
             <a href="#" class="sidebar-link" onclick="showSection('resources')"><i class="fas fa-folder-open"></i> Resources</a>
             <a href="#" class="sidebar-link" onclick="showSection('quizzes')"><i class="fas fa-tasks"></i> Quizzes</a>
+            <a href="#" class="sidebar-link" onclick="showSection('tasks')"><i class="fas fa-list-check"></i> Daily Missions</a>
             <a href="#" class="sidebar-link" onclick="showSection('chat')"><i class="fas fa-comments"></i> Chat Center</a>
             <a href="#" class="sidebar-link" onclick="showSection('leaderboard')"><i class="fas fa-award"></i> Leaderboard</a>
             <div class="mt-5 pt-5">
@@ -145,6 +146,39 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Task Section -->
+            <section id="tasks-section" class="dynamic-section d-none">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h3 class="fw-bold mb-0">Daily Missions</h3>
+                        <p class="text-muted small">Complete tasks to earn extra XP and boost your rank!</p>
+                    </div>
+                    <button class="btn btn-indigo btn-sm" onclick="showPersonalTaskModal()">
+                        <i class="fas fa-plus me-2"></i>Personal Task
+                    </button>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <div id="task-list">
+                            <!-- Tasks loaded here -->
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="item-card bg-light border-0">
+                            <h6 class="fw-bold mb-3">Task Progress</h6>
+                            <div class="text-center py-4">
+                                <div class="h2 fw-bold text-indigo" id="task-completion-stat">0/0</div>
+                                <div class="text-muted small">TASKS COMPLETED</div>
+                            </div>
+                            <div class="progress" style="height: 10px; border-radius: 5px;">
+                                <div id="task-progress-bar" class="progress-bar bg-success" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
 
@@ -182,6 +216,33 @@
                     <input type="password" id="quiz-entry-password" class="form-control text-center mb-3" placeholder="Enter Access Key">
                     <button onclick="validateAndStart()" class="btn btn-indigo w-100">Start Now</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Personal Task Modal -->
+    <div class="modal fade" id="personalTaskModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-lg p-3">
+                <div class="modal-header border-0">
+                    <h5 class="fw-bold">New Personal Task</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="personalTaskForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Task Title</label>
+                            <input type="text" id="task-title" class="form-control" placeholder="What needs to be done?" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Description (Optional)</label>
+                            <textarea id="task-desc" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="submit" class="btn btn-indigo w-100">Create Task</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -419,8 +480,89 @@
                 if(id === 'resources') loadResources();
                 if(id === 'quizzes') loadQuizzes();
                 if(id === 'chat') loadChatList();
+                if(id === 'tasks') loadTasks();
             }
         }
+
+        async function loadTasks() {
+            const personalRes = await fetch('/api/tasks/personal');
+            const personalTasks = await personalRes.json();
+            
+            let classroomTasks = [];
+            if(currentRoomId) {
+                const classroomRes = await fetch(`/api/tasks/classroom/${currentRoomId}`);
+                classroomTasks = await classroomRes.json();
+            }
+            
+            const allTasks = [...classroomTasks, ...personalTasks];
+            const list = document.getElementById('task-list');
+            
+            if(allTasks.length === 0) {
+                list.innerHTML = '<div class="text-center p-5 text-muted">No missions for today. Take a break!</div>';
+                return;
+            }
+
+            list.innerHTML = allTasks.map(t => `
+                <div class="task-item ${t.completed ? 'completed' : ''} animate-in">
+                    <div class="task-checkbox" onclick="toggleTask(${t.id})">
+                        ${t.completed ? '<i class="fas fa-check"></i>' : ''}
+                    </div>
+                    <div class="task-content flex-grow-1">
+                        <div class="d-flex align-items-center gap-2">
+                            <h6 class="fw-bold mb-0">${t.title}</h6>
+                            ${t.global ? '<span class="task-badge-mission"><i class="fas fa-star me-1"></i>Class Mission</span>' : ''}
+                        </div>
+                        <p class="text-muted small mb-0">${t.description || 'No description provided.'}</p>
+                    </div>
+                    <div class="text-end">
+                        <div class="text-indigo fw-bold small">+${t.xpReward} XP</div>
+                        ${!t.global ? `<button onclick="deleteTask(${t.id})" class="btn btn-link btn-sm text-danger p-0"><i class="fas fa-trash-can"></i></button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            const completed = allTasks.filter(t => t.completed).length;
+            document.getElementById('task-completion-stat').innerText = `${completed}/${allTasks.length}`;
+            document.getElementById('task-progress-bar').style.width = `${(completed / allTasks.length) * 100}%`;
+        }
+
+        async function toggleTask(id) {
+            const res = await fetch(`/api/tasks/${id}/complete`, { method: 'POST' });
+            if(res.ok) {
+                loadTasks();
+                loadUserInfo(); // Update XP
+                // Trigger mini-confetti if possible
+            }
+        }
+
+        async function deleteTask(id) {
+            if(confirm('Delete this personal task?')) {
+                await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+                loadTasks();
+            }
+        }
+
+        function showPersonalTaskModal() {
+            new bootstrap.Modal(document.getElementById('personalTaskModal')).show();
+        }
+
+        document.getElementById('personalTaskForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('task-title').value;
+            const description = document.getElementById('task-desc').value;
+            
+            const res = await fetch('/api/tasks/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, description, isGlobal: false })
+            });
+
+            if(res.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('personalTaskModal')).hide();
+                document.getElementById('personalTaskForm').reset();
+                loadTasks();
+            }
+        });
 
         async function loadResources() {
             const res = await fetch(`/student/resources?classroomId=${currentRoomId}&t=${Date.now()}`);

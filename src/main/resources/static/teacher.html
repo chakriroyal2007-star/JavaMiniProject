@@ -22,6 +22,7 @@
             <a href="#" class="sidebar-link active" onclick="loadClassrooms()"><i class="fas fa-th-large"></i> Dashboard</a>
             <a href="#" class="sidebar-link" onclick="showSection('resources')"><i class="fas fa-folder"></i> Resources</a>
             <a href="#" class="sidebar-link" onclick="showSection('quizzes')"><i class="fas fa-vial"></i> Quizzes</a>
+            <a href="#" class="sidebar-link" onclick="showSection('tasks')"><i class="fas fa-list-check"></i> Classroom Tasks</a>
             <a href="#" class="sidebar-link" onclick="showSection('results')"><i class="fas fa-chart-line"></i> Analytics</a>
             <a href="#" class="sidebar-link" onclick="showSection('chat')"><i class="fas fa-comments"></i> Discussion Hub</a>
             <div class="mt-5 pt-5">
@@ -136,6 +137,18 @@
                             </form>
                         </div>
                     </div>
+            </section>
+
+            <!-- Tasks Sub-Section -->
+            <section id="tasks-section" class="dynamic-section d-none">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>Classroom Missions</h3>
+                    <button class="btn btn-indigo" onclick="showGlobalTaskModal()">
+                        <i class="fas fa-plus me-2"></i>Publish Task
+                    </button>
+                </div>
+                <div id="teacher-task-list">
+                    <!-- Tasks loaded here -->
                 </div>
             </section>
         </div>
@@ -253,6 +266,37 @@
         </div>
     </div>
 
+    <!-- Global Task Modal -->
+    <div class="modal fade" id="globalTaskModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-lg p-3">
+                <div class="modal-header border-0">
+                    <h5 class="fw-bold">Publish Global Task</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="globalTaskForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Task Title</label>
+                            <input type="text" id="g-task-title" class="form-control" placeholder="e.g., Read the uploaded PDF" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Description</label>
+                            <textarea id="g-task-desc" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">XP Reward</label>
+                            <input type="number" id="g-task-xp" class="form-control" value="50">
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="submit" class="btn btn-indigo w-100">Publish to Class</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/api.js"></script>
     <script>
@@ -310,6 +354,63 @@
                 if(id === 'quizzes') loadQuizzes();
                 if(id === 'announcements') loadAnnouncements();
                 if(id === 'chat') loadChatList();
+                if(id === 'tasks') loadTeacherTasks();
+            }
+        }
+
+        async function loadTeacherTasks() {
+            const res = await fetch(`/api/tasks/classroom/${currentRoomId}`);
+            const tasks = await res.json();
+            const list = document.getElementById('teacher-task-list');
+            
+            list.innerHTML = tasks.map(t => `
+                <div class="task-item animate-in">
+                    <div class="p-3 rounded-lg bg-light text-primary"><i class="fas fa-bullseye"></i></div>
+                    <div class="flex-grow-1">
+                        <h6 class="fw-bold mb-0">${t.title}</h6>
+                        <p class="text-muted small mb-0">${t.description || 'No description'}</p>
+                    </div>
+                    <div class="text-end">
+                        <div class="badge bg-indigo-soft text-indigo mb-2">+${t.xpReward} XP</div>
+                        <div>
+                            <button onclick="deleteTask(${t.id})" class="btn btn-link btn-sm text-danger p-0"><i class="fas fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `).join('') || '<div class="text-center p-5 text-muted">No classroom tasks published yet.</div>';
+        }
+
+        function showGlobalTaskModal() {
+            new bootstrap.Modal(document.getElementById('globalTaskModal')).show();
+        }
+
+        document.getElementById('globalTaskForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('g-task-title').value;
+            const description = document.getElementById('g-task-desc').value;
+            const xpReward = document.getElementById('g-task-xp').value;
+            
+            await fetch('/api/tasks/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    title, 
+                    description, 
+                    isGlobal: true, 
+                    classroomId: currentRoomId,
+                    xpReward: parseInt(xpReward)
+                })
+            });
+
+            bootstrap.Modal.getInstance(document.getElementById('globalTaskModal')).hide();
+            document.getElementById('globalTaskForm').reset();
+            loadTeacherTasks();
+        });
+
+        async function deleteTask(id) {
+            if(confirm('Delete this task?')) {
+                await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+                loadTeacherTasks();
             }
         }
 

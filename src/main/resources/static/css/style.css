@@ -290,3 +290,58 @@ body {
     text-decoration: none;
     color: inherit;
 }
+/* Task Manager */
+.task-item {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 1rem;
+}
+
+.task-item:hover {
+    transform: translateX(5px);
+    border-color: var(--primary);
+}
+
+.task-checkbox {
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.task-checkbox:hover {
+    border-color: var(--primary);
+    background: #EEF2FF;
+}
+
+.task-item.completed .task-checkbox {
+    background: var(--secondary);
+    border-color: var(--secondary);
+    color: white;
+}
+
+.task-item.completed .task-content {
+    text-decoration: line-through;
+    opacity: 0.5;
+}
+
+.task-badge-mission {
+    background: #FFFBEB;
+    color: #B45309;
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
